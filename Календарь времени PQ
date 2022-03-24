@@ -1,0 +1,12 @@
+let
+    Источник = List.Times(#time(0,0,0), Duration.TotalSeconds(Duration.From(#time(23,59,59)-#time(0,0,0)))+1, #duration(0,0,0,1)),
+    #"Преобразовано в таблицу" = Table.FromList(Источник, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Переименованные столбцы" = Table.RenameColumns(#"Преобразовано в таблицу",{{"Column1", "Time"}}),
+    #"Вставлено: часы" = Table.AddColumn(#"Переименованные столбцы", "Час", each Time.Hour([Time]), Int64.Type),
+    #"Вставлено: минуты" = Table.AddColumn(#"Вставлено: часы", "Минута", each Time.Minute([Time]), Int64.Type),
+    #"Измененный тип" = Table.TransformColumnTypes(#"Вставлено: минуты",{{"Time", type time}}),
+    #"Условный столбец добавлен" = Table.AddColumn(#"Измененный тип", "Время суток", each if [Час] < 6 then "Ночь" else if [Час] < 11 then "Утро" else if [Час] < 18 then "День" else "Вечер"),
+    #"Условный столбец добавлен1" = Table.AddColumn(#"Условный столбец добавлен", "Порядок времени суток", each if [Время суток] = "Утро" then 2 else if [Время суток] = "День" then 3 else if [Время суток] = "Вечер" then 4 else if [Время суток] = "Ночь" then 1 else null),
+    #"Измененный тип1" = Table.TransformColumnTypes(#"Условный столбец добавлен1",{{"Порядок времени суток", Int64.Type}, {"Время суток", type text}})
+in
+    #"Измененный тип1"
